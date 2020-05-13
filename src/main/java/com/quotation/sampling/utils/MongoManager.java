@@ -1,5 +1,6 @@
 package com.quotation.sampling.utils;
 
+import cn.hutool.setting.Setting;
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientOptions;
 import com.mongodb.MongoException;
@@ -18,10 +19,6 @@ public class MongoManager {
     private static MongoClient mongoClient= null;
     private MongoManager() { }
 
-    static {
-        initDBPrompties();
-    }
-
     public static MongoDatabase getDatabase(String dbName) {
         return mongoClient.getDatabase(dbName);
     }
@@ -33,13 +30,13 @@ public class MongoManager {
     /**
      * 初始化连接池
      */
-    private static void initDBPrompties() {
+    public static void initDBPrompties(String host, int port) {
         try {
             MongoClientOptions mco = MongoClientOptions.builder()
                     .connectionsPerHost(100)
                     .threadsAllowedToBlockForConnectionMultiplier(100)
                     .build();
-            mongoClient = new MongoClient(new ServerAddress("192.168.214.193", 27017), mco);
+            mongoClient = new MongoClient(new ServerAddress(host, port), mco);
         } catch (MongoException e) {
             e.printStackTrace();
         }

@@ -3,10 +3,11 @@ package com.quotation.sampling;
 import com.google.common.collect.Lists;
 import com.quotation.sampling.bean.KLine;
 import com.quotation.sampling.config.Constant;
+import com.quotation.sampling.config.InitSetting;
+import com.quotation.sampling.config.SamplingConfig;
 import com.quotation.sampling.operator.*;
 import com.quotation.sampling.utils.RabbitConnectTools;
 import com.quotation.sampling.utils.TimeHandler;
-import org.apache.flink.api.common.functions.FilterFunction;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -41,11 +42,16 @@ public class Start implements Serializable {
     }
 
     public static void main(String[] args) throws Exception {
+        //基础配置
+        SamplingConfig samplingConfig = InitSetting.initSetting(args);
+        //flink运行环境
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
-        RabbitConnectTools rabbitConnectTools = new RabbitConnectTools();
+        //rabbit连接初始化
+        RabbitConnectTools rabbitConnectTools = new RabbitConnectTools(samplingConfig);
         rabbitConnectTools.subscribeSource();
         RMQConnectionConfig rabbitConfig = rabbitConnectTools.getConnectionConfig();
+        //数据处理
         SingleOutputStreamOperator<KLine> process = env
                 .addSource(new RMQSource<String>(rabbitConfig, RABBIT_QUEUE_NAME, true, new SimpleStringSchema()))
                 .map(new SourceMapFunction())

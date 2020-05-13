@@ -2,6 +2,7 @@ package com.quotation.sampling.utils;
 
 import com.google.common.collect.Lists;
 import com.quotation.sampling.config.Constant;
+import com.quotation.sampling.config.SamplingConfig;
 import com.quotation.sampling.utils.JedisUtils;
 import com.rabbitmq.client.Channel;
 import com.rabbitmq.client.Connection;
@@ -27,15 +28,15 @@ public class RabbitConnectTools {
     private RMQConnectionConfig connectionConfig;
     private String exchange;
 
-    public RabbitConnectTools() {
+    public RabbitConnectTools(SamplingConfig samplingConfig) {
         this.connectionConfig = new RMQConnectionConfig.Builder()
-                .setHost("192.168.214.193")
-                .setPort(5672)
+                .setHost(samplingConfig.getMqHost())
+                .setPort(samplingConfig.getMqPort())
                 .setVirtualHost("/")
-                .setUserName("admin")
-                .setPassword("admin")
+                .setUserName(samplingConfig.getMqUserName())
+                .setPassword(samplingConfig.getMqPassword())
                 .build();
-        this.exchange = "CTPX";
+        this.exchange = samplingConfig.getExchange();
     }
 
     public void subscribeSource() throws Exception {
@@ -52,16 +53,16 @@ public class RabbitConnectTools {
         connection.close();
     }
 
-    public void publishMessage() throws Exception {
-        ConnectionFactory factory = this.connectionConfig.getConnectionFactory();
-        Connection connection = factory.newConnection();
-        Channel channel = connection.createChannel();
-
-        channel.exchangeDeclare(Constant.REAL_MIN1, "direct", true);
-        channel.basicPublish("default", "default", null, "23423523542".getBytes());
-        channel.close();
-        connection.close();
-    }
+//    public void publishMessage() throws Exception {
+//        ConnectionFactory factory = this.connectionConfig.getConnectionFactory();
+//        Connection connection = factory.newConnection();
+//        Channel channel = connection.createChannel();
+//
+//        channel.exchangeDeclare(Constant.REAL_MIN1, "direct", true);
+//        channel.basicPublish("default", "default", null, "23423523542".getBytes());
+//        channel.close();
+//        connection.close();
+//    }
 
     private List<String> queryAllFuture(){
         Set<String> allFutureCode = JedisUtils.getAllFutureCode();

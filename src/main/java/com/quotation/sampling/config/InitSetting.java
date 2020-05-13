@@ -1,6 +1,10 @@
 package com.quotation.sampling.config;
 
 import cn.hutool.setting.Setting;
+import com.quotation.sampling.utils.MongoManager;
+
+import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @Classname InitSetting
@@ -11,12 +15,27 @@ import cn.hutool.setting.Setting;
  */
 public class InitSetting {
 
-    public InitSetting() {
-        this("demo");
+//    public InitSetting() {
+//        this("demo");
+//    }
+
+    public static SamplingConfig getSettingByGroup(String groupName) {
+        SamplingConfig samplingConfig = new SamplingConfig();
+        Setting setting = new Setting("start.setting");
+        setting.toBean(groupName, samplingConfig);
+        setting.toBean(samplingConfig.getDb(), samplingConfig);
+        setting.toBean(samplingConfig.getMq(), samplingConfig);
+        return samplingConfig;
     }
 
-    public InitSetting(String groupName) {
-        Setting setting = new Setting("XXX.setting");
-        setting.getBool("isCheckTradingTime", groupName, true);
+    public static SamplingConfig initSetting(String...args){
+        String groupName = "dev";
+        if(Objects.nonNull(args) && args.length >= 1){
+            groupName = args[0];
+        }
+        SamplingConfig samplingConfig =  getSettingByGroup(groupName);
+
+        MongoManager.initDBPrompties(samplingConfig.getDbHost(), samplingConfig.getDbPort());
+        return samplingConfig;
     }
 }

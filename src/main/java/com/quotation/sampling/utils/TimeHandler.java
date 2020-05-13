@@ -1,6 +1,5 @@
 package com.quotation.sampling.utils;
 
-import cn.hutool.core.lang.Tuple;
 import com.google.common.collect.Lists;
 import org.apache.flink.api.java.tuple.Tuple2;
 
