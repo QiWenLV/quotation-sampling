@@ -7,14 +7,18 @@ import com.quotation.sampling.bean.KLine;
 import com.quotation.sampling.config.InitSetting;
 import com.quotation.sampling.config.SamplingConfig;
 import com.quotation.sampling.utils.MongoManager;
+import lombok.extern.java.Log;
 import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
 import org.bson.Document;
+import scala.annotation.meta.param;
 
 import java.time.format.DateTimeFormatter;
 import java.util.Map;
+import java.util.Objects;
 
+@Log
 /**
  * @Classname MongoSinkFunction
  * @Description Mongo sink
@@ -30,15 +34,17 @@ public class MongoSinkFunction extends RichSinkFunction<KLine> {
 
     public MongoSinkFunction(String collectionName) {
         this.collectionName = collectionName;
+//        SamplingConfig samplingConfig = InitSetting.initSetting("dev");
+//        System.out.println("samplingConfig:  " + samplingConfig);
+        this.dbName = "quantaxis";
+        MongoManager.initMongoDB();
+        log.info("mongo连接池初始化完成");
         mongoClient = MongoManager.getMongoClient();
     }
 
     @Override
     public void open(Configuration parameters) throws Exception {
         super.open(parameters);
-        ParameterTool param = (ParameterTool) getRuntimeContext().getExecutionConfig().getGlobalJobParameters();
-        SamplingConfig samplingConfig = InitSetting.initSetting(param.get("env"));
-        this.dbName = samplingConfig.getDbName();
     }
 
     @Override
@@ -51,6 +57,9 @@ public class MongoSinkFunction extends RichSinkFunction<KLine> {
     }
 
     public void saveDocument(Document document){
+        if(Objects.isNull(mongoClient)){
+            mongoClient = MongoManager.getMongoClient();
+        }
         MongoCollection<Document> collection = mongoClient.getDatabase(dbName).getCollection(collectionName);
         collection.insertOne(document);
     }

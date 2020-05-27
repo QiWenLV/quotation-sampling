@@ -54,7 +54,9 @@ public class Start implements Serializable {
         ParameterTool parameters = ParameterTool.fromArgs(args);
         SamplingConfig samplingConfig = InitSetting.initSetting(parameters.get("env", "dev"));
         //flink运行环境
-        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+//        StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        StreamExecutionEnvironment env = StreamExecutionEnvironment.createRemoteEnvironment("192.168.214.181", 30263,
+                3, "/home/kevin/IdeaProjects/quotation-sampling/target/quotation-sampling-1.0-SNAPSHOT.jar");
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
         //rabbit连接初始化
         RabbitConnectTools rabbitConnectTools = new RabbitConnectTools(samplingConfig);
@@ -79,7 +81,7 @@ public class Start implements Serializable {
         sink(process1, Constant.MIN15, Constant.REAL_MIN15, rabbitConfig);
         sink(process1, Constant.MIN30, Constant.REAL_MIN30, rabbitConfig);
         sink(process1, Constant.MIN60, Constant.REAL_MIN60, rabbitConfig);
-        env.execute("quotation sampling demo");
+        env.execute("quotation sampling demo2");
     }
 
     public static void sink(SingleOutputStreamOperator<KLine> process, String outputType, String sinkName, RMQConnectionConfig rabbitConfig){

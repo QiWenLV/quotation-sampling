@@ -9,7 +9,7 @@ db = mongoDB
 mq = rabbitMQ
 
 [mongoDB]
-dbName = quantaxis2
+dbName = quantaxis
 dbHost = 192.168.214.193
 dbPort = 27017
 

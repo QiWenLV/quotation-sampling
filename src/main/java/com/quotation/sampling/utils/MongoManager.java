@@ -7,8 +7,10 @@ import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoDatabase;
 import com.quotation.sampling.config.InitSetting;
 import com.quotation.sampling.config.SamplingConfig;
+import lombok.extern.java.Log;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 /**
  * @Classname MongoManager
@@ -26,16 +28,24 @@ public class MongoManager {
     private MongoManager() {}
 
 
-    static {
-        initMongoDB();
-    }
+//    static {
+//        initMongoDB();
+//    }
 
     public static MongoDatabase getDatabase(String dbName) {
         return mongoClient.getDatabase(dbName);
     }
 
     public static MongoClient getMongoClient() {
-        return mongoClient;
+        if(Objects.isNull(mongoClient)){
+            MongoClientOptions mco = MongoClientOptions.builder()
+                    .connectionsPerHost(POOL_SIZE)
+                    .threadsAllowedToBlockForConnectionMultiplier(BLOCK_SIZE)
+                    .build();
+            return new MongoClient(new ServerAddress("192.168.214.193", 27017), mco);
+        } else {
+            return mongoClient;
+        }
     }
 
     /**
@@ -43,12 +53,11 @@ public class MongoManager {
      */
     public static void initMongoDB() {
         try {
-            SamplingConfig samplingConfig = InitSetting.samplingConfig;
             MongoClientOptions mco = MongoClientOptions.builder()
                     .connectionsPerHost(POOL_SIZE)
                     .threadsAllowedToBlockForConnectionMultiplier(BLOCK_SIZE)
                     .build();
-            mongoClient = new MongoClient(new ServerAddress(samplingConfig.getDbHost(), samplingConfig.getDbPort()), mco);
+            mongoClient = new MongoClient(new ServerAddress("192.168.214.193", 27017), mco);
         } catch (MongoException e) {
             e.printStackTrace();
         }
