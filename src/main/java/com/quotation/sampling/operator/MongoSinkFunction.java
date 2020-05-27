@@ -1,11 +1,19 @@
 package com.quotation.sampling.operator;
 
-import com.alibaba.fastjson.JSON;
+import cn.hutool.core.bean.BeanUtil;
+import com.mongodb.MongoClient;
+import com.mongodb.client.MongoCollection;
 import com.quotation.sampling.bean.KLine;
-import com.quotation.sampling.utils.MongoHandler;
+import com.quotation.sampling.config.InitSetting;
+import com.quotation.sampling.config.SamplingConfig;
 import com.quotation.sampling.utils.MongoManager;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
+import org.bson.Document;
+
+import java.time.format.DateTimeFormatter;
+import java.util.Map;
 
 /**
  * @Classname MongoSinkFunction
@@ -16,23 +24,34 @@ import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
  */
 public class MongoSinkFunction extends RichSinkFunction<KLine> {
 
-    private MongoHandler mongoHandler;
     private String collectionName;
-
-    private final static String DB_NAME = "quantaxis2";
+    private String dbName;
+    private static MongoClient mongoClient;
 
     public MongoSinkFunction(String collectionName) {
         this.collectionName = collectionName;
+        mongoClient = MongoManager.getMongoClient();
     }
 
     @Override
     public void open(Configuration parameters) throws Exception {
         super.open(parameters);
-        this.mongoHandler = new MongoHandler(MongoManager.getClient(), DB_NAME, this.collectionName);
+        ParameterTool param = (ParameterTool) getRuntimeContext().getExecutionConfig().getGlobalJobParameters();
+        SamplingConfig samplingConfig = InitSetting.initSetting(param.get("env"));
+        this.dbName = samplingConfig.getDbName();
     }
 
     @Override
     public void invoke(KLine value, Context context) throws Exception {
-        this.mongoHandler.saveJson(JSON.toJSONString(value));
+        Document document = new Document();
+        Map<String, Object> targetMap = BeanUtil.beanToMap(value);
+        targetMap.put("datetime", value.getDatetime().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        document.putAll(targetMap);
+        saveDocument(document);
+    }
+
+    public void saveDocument(Document document){
+        MongoCollection<Document> collection = mongoClient.getDatabase(dbName).getCollection(collectionName);
+        collection.insertOne(document);
     }
 }

@@ -1,5 +1,6 @@
 package com.quotation.sampling;
 
+import cn.hutool.core.bean.BeanUtil;
 import com.google.common.collect.Lists;
 import com.quotation.sampling.bean.KLine;
 import com.quotation.sampling.config.Constant;
@@ -8,6 +9,8 @@ import com.quotation.sampling.config.SamplingConfig;
 import com.quotation.sampling.operator.*;
 import com.quotation.sampling.utils.RabbitConnectTools;
 import com.quotation.sampling.utils.TimeHandler;
+import org.apache.flink.api.common.ExecutionConfig;
+import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -41,9 +44,15 @@ public class Start implements Serializable {
         OUTPUT_TAGS.put("min60", new OutputTag<KLine>("min60"){});
     }
 
+    /**
+     * 入口
+     * @param args  启动参数 -env dev
+     * @throws Exception
+     */
     public static void main(String[] args) throws Exception {
         //基础配置
-        SamplingConfig samplingConfig = InitSetting.initSetting(args);
+        ParameterTool parameters = ParameterTool.fromArgs(args);
+        SamplingConfig samplingConfig = InitSetting.initSetting(parameters.get("env", "dev"));
         //flink运行环境
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
@@ -52,10 +61,11 @@ public class Start implements Serializable {
         rabbitConnectTools.subscribeSource();
         RMQConnectionConfig rabbitConfig = rabbitConnectTools.getConnectionConfig();
         //数据处理
+        env.getConfig().setGlobalJobParameters(parameters);
         SingleOutputStreamOperator<KLine> process = env
                 .addSource(new RMQSource<String>(rabbitConfig, RABBIT_QUEUE_NAME, true, new SimpleStringSchema()))
                 .map(new SourceMapFunction())
-                .filter(value -> TimeHandler.isBetweenTradingTime(value.getDatetime().toLocalTime()))
+//                .filter(value -> TimeHandler.isBetweenTradingTime(value.getDatetime().toLocalTime()))
                 .assignTimestampsAndWatermarks(new SamplingTimeWatermarks())
                 .keyBy(value -> buildKey(value.getExchange(), value.getCode()))
                 .window(new SamplingTimeWindows())

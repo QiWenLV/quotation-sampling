@@ -1,10 +1,8 @@
 package com.quotation.sampling.config;
 
 import cn.hutool.setting.Setting;
-import com.quotation.sampling.utils.MongoManager;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * @Classname InitSetting
@@ -18,7 +16,15 @@ public class InitSetting {
 //    public InitSetting() {
 //        this("demo");
 //    }
+    public static SamplingConfig samplingConfig;
 
+    private InitSetting(){}
+
+    /**
+     * 根据配置分组名获取配置信息
+     * @param groupName
+     * @return
+     */
     public static SamplingConfig getSettingByGroup(String groupName) {
         SamplingConfig samplingConfig = new SamplingConfig();
         Setting setting = new Setting("start.setting");
@@ -28,14 +34,19 @@ public class InitSetting {
         return samplingConfig;
     }
 
+    /**
+     * 初始化配置信息
+     * @param args
+     * @return
+     */
     public static SamplingConfig initSetting(String...args){
         String groupName = "dev";
         if(Objects.nonNull(args) && args.length >= 1){
             groupName = args[0];
         }
-        SamplingConfig samplingConfig =  getSettingByGroup(groupName);
+        InitSetting.samplingConfig =  getSettingByGroup(groupName);
 
-        MongoManager.initDBPrompties(samplingConfig.getDbHost(), samplingConfig.getDbPort());
-        return samplingConfig;
+//        MongoManager.initMongoDB(samplingConfig.getDbHost(), samplingConfig.getDbPort());
+        return InitSetting.samplingConfig;
     }
 }

@@ -8,6 +8,7 @@ import org.apache.flink.util.OutputTag;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -33,8 +34,8 @@ public class SamplingProcessFunction extends ProcessWindowFunction<KLine, KLine,
         KLine kLine = KLine.builder()
                 .code(linkKey[1])
                 .exchange(linkKey[0])
+                .timestamp(LocalDateTime.now().toInstant(ZoneOffset.of("+8")).toEpochMilli())
                 .datetime(datetime)
-                .updatetime(datetime)
                 .frequence((int) (context.window().getEnd() - context.window().getStart()) / 60000)
                 .build();
         AtomicBoolean firstFlag = new AtomicBoolean(true);
@@ -46,12 +47,14 @@ public class SamplingProcessFunction extends ProcessWindowFunction<KLine, KLine,
                 kLine.setLow(lastPrice);
                 kLine.setClose(lastPrice);
                 kLine.setVolume(x.getVolume());
+                kLine.setAmount(lastPrice * x.getVolume());
                 firstFlag.set(false);
             } else {
                 kLine.updateHigh(lastPrice);
                 kLine.updateLow(lastPrice);
                 kLine.updateVolume(x.getVolume());
                 kLine.updateClose(lastPrice);
+                kLine.updateAmount(lastPrice * x.getVolume());
             }
         });
         context.output(OUTPUT_TAGS.get("min" + kLine.getFrequence()), kLine);

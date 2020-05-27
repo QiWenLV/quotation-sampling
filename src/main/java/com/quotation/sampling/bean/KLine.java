@@ -21,13 +21,14 @@ import java.time.LocalDateTime;
 public class KLine {
 
     private LocalDateTime datetime;
-    private LocalDateTime updatetime;
+    private long timestamp;
     private String code;
     private String exchange;
     private double open;
     private double high;
     private double low;
     private double close;
+    private double amount;
     private int volume;
     private int frequence;
 
@@ -46,5 +47,9 @@ public class KLine {
 
     public void updateVolume(int volume){
         this.volume += volume;
+    }
+
+    public void updateAmount(double amount) {
+        this.amount += amount;
     }
 }

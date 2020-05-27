@@ -5,6 +5,7 @@ import com.quotation.sampling.bean.KLine;
 import org.apache.flink.api.common.functions.RichMapFunction;
 
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -26,8 +27,8 @@ public class SourceMapFunction extends RichMapFunction<String, KLine> {
         return KLine.builder()
                 .code(jsonObject.getString("symbol"))
                 .exchange(jsonObject.getString("exchange"))
+                .timestamp(parse.toInstant(ZoneOffset.of("+8")).toEpochMilli())
                 .datetime(parse)
-                .updatetime(parse)
                 .close(jsonObject.getDoubleValue("last_price"))
                 .volume(jsonObject.getIntValue("volume"))
                 .build();
